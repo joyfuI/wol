@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block content %}
+
+{{ macros.m_row_start('5') }}
+{{ macros.m_row_end() }}
+
+<style>
+    textarea#copy {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+</style>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">이름</th>
+            <th scope="col">MAC 주소</th>
+            <th scope="col">브로드캐스트 주소</th>
+            <th scope="col"></th>
+        </tr>
+    </thead>
+    <tbody id="table_body"></tbody>
+    <tfoot>
+        <tr>
+            <td><input id="add_name" class="form-control form-control-sm" type="text"></td>
+            <td>
+                <input id="add_mac" class="form-control form-control-sm" type="text" placeholder="AB:CD:EF:12:34:56">
+            </td>
+            <td><input id="add_ip" class="form-control form-control-sm" type="text" placeholder="192.168.0.255"></td>
+            <td>{{ macros.m_button('add_btn', '추가') }}</td>
+        </tr>
+    </tfoot>
+</table>
+
+<script>
+    "use strict";
+    const package_name = '{{ arg["package_name"] }}';
+    const sub = '{{ arg["sub"] }}';
+    const sub2 = '{{ arg["sub2"] }}';
+
+    const table_body = document.getElementById('table_body');
+    const add_name = document.getElementById('add_name');
+    const add_mac = document.getElementById('add_mac');
+    const add_ip = document.getElementById('add_ip');
+    const add_btn = document.getElementById('add_btn');
+
+    // confirm modal
+    const confirm_title = document.getElementById('confirm_title');
+    const confirm_body = document.getElementById('confirm_body');
+    const confirm_button = document.getElementById('confirm_button');
+
+    const copy_to_clipboard = (val) => {
+        const textarea = document.createElement("textarea");
+        textarea.id = 'copy';
+        document.body.appendChild(textarea);
+        textarea.value = val;
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+    }
+
+    const post_ajax = (url, data) => fetch(`/${package_name}/ajax/${sub}${url}`, {
+        method: 'POST',
+        cache: 'no-cache',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+        },
+        body: new URLSearchParams(data)
+    }).then(response => response.json()).then((ret) => {
+        if (ret.msg) {
+            notify(ret.msg, ret.ret);
+        }
+        return ret;
+    });
+
+    const make_row = (item) => `<tr>
+    <td>
+        <a href="{{ arg['ddns'] }}/{{ arg['package_name'] }}/api/{{ arg['sub'] }}/wake?{{ arg['api'] }}id=${item.id}" target="_blank">${item.name}</a>
+    </td>
+    <td>${item.mac}</td>
+    <td>${item.ip}</td>
+    <td>
+        <div class="btn-group btn-group-sm flex-wrap mr-2" role="group">
+            <button class="btn btn-sm btn-outline-primary" type="button" data-type="wake" data-id="${item.id}">깨우기</button>
+            <button class="btn btn-sm btn-outline-danger" type="button" data-type="delete" data-id="${item.id}" data-name="${item.name}">삭제</button>
+        </div>
+    </td>
+</tr>`
+
+    const reload_list = async () => {
+        const {data} = await post_ajax('/read');
+        table_body.innerHTML = data.map((item) => make_row(item)).join('\n');
+    }
+
+    table_body.addEventListener('click', (e) => {
+        e.preventDefault();
+        const {target} = e;
+
+        if (target.tagName === 'A') {
+            // 이름 링크
+            copy_to_clipboard(target.href);
+            notify('API 주소가 복사되었습니다.', 'success');
+        } else if (target.tagName === 'BUTTON') {
+            const {type, id, name} = target.dataset;
+            if (type === 'wake') {
+                // 깨우기 버튼
+                post_ajax('/wake', {id})
+            } else if (type === 'delete') {
+                // 삭제 버튼
+                confirm_title.textContent = '항목 삭제';
+                confirm_body.textContent = `${name} 삭제하시겠습니까?`;
+                confirm_button.onclick = (e) => {
+                    e.preventDefault();
+                    post_ajax('/delete', {id}).then(reload_list)
+                };
+
+                $('#confirm_modal').modal();
+            }
+        }
+    });
+
+    // 추가
+    add_btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (!add_name.value) {
+            notify('이름을 입력하세요.', 'warning');
+            return;
+        } else if (!add_mac.value) {
+            notify('MAC 주소를 입력하세요.', 'warning');
+            return;
+        } else if (!/^([0-9a-fA-F]{2}[:-]){5}([0-9a-fA-F]{2})$/.test(add_mac.value)) {
+            notify('MAC 주소 형식이 올바르지 않습니다.', 'warning');
+            return;
+        } else if (!add_ip.value) {
+            notify('브로드캐스트 주소를 입력하세요.', 'warning');
+            return;
+        }
+
+        post_ajax('/create', {
+            name: add_name.value,
+            mac: add_mac.value,
+            ip: add_ip.value
+        }).then(reload_list);
+    });
+
+    // 첫 리스트 생성
+    table_body.innerHTML = JSON.parse('{{ arg["list"]|safe }}').map((item) => make_row(item)).join('\n');
+</script>
+
+{% endblock %}
