@@ -46,14 +46,14 @@ class LogicWOL(LogicModuleBase):
                 arg['list'] = json.dumps(ModelWOL.to_dict())
 
             return render_template(f'{package_name}_{name}_{sub}.html', arg=arg)
-        except Exception as exception:
-            logger.error('Exception:%s', exception)
+        except Exception as e:
+            logger.error('Exception:%s', e)
             logger.error(traceback.format_exc())
             return render_template('sample.html', title=f'{package_name} - {sub}')
 
     def process_ajax(self, sub, req):
         try:
-            logger.debug('ajax: %s, %s', sub, req.values)
+            logger.debug('AJAX: %s, %s', sub, req.values)
             ret = {'ret': 'success'}
 
             if sub == 'create':
@@ -86,7 +86,7 @@ class LogicWOL(LogicModuleBase):
                     ret['msg'] = '잘못된 요청'
                 else:
                     wol = ModelWOL.find(wol_id)
-                    self.send_wol(wol.mac, wol.ip)
+                    LogicWOL.send_wol(wol.mac, wol.ip)
                     ret['msg'] = '매직 패킷 전송 성공'
 
             return jsonify(ret)
@@ -97,7 +97,7 @@ class LogicWOL(LogicModuleBase):
 
     def process_api(self, sub, req):
         try:
-            logger.debug('api: %s, %s', sub, req.values)
+            logger.debug('API: %s, %s', sub, req.values)
             ret = {'ret': 'success'}
 
             if sub == 'wake':
@@ -111,7 +111,7 @@ class LogicWOL(LogicModuleBase):
                         ret['ret'] = 'danger'
                         ret['msg'] = '존재하지 않는 id'
                     else:
-                        self.send_wol(wol.mac, wol.ip)
+                        LogicWOL.send_wol(wol.mac, wol.ip)
                         ret['msg'] = '매직 패킷 전송 성공'
 
             return jsonify(ret)
@@ -121,7 +121,8 @@ class LogicWOL(LogicModuleBase):
             return jsonify({'ret': 'danger', 'msg': str(e)})
 
     # 매직패킷 전송
-    def send_wol(self, mac: str, ip: str) -> None:
+    @staticmethod
+    def send_wol(mac: str, ip: str) -> None:
         sep = mac[2]
         mac = mac.replace(sep, '')  # 구분자 제거
         port = ModelSetting.get_int(f'{name}_port')
