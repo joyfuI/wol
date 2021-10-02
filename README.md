@@ -1,6 +1,6 @@
 # wol_sjva
 
-[SJVA](https://sjva.me/) 용 WOL 모듈입니다.  
+[SJVA](https://sjva.me/) 용 WOL 모듈  
 Wake On Lan을 사용해 원격으로 컴퓨터를 켤 수 있습니다.
 
 ## 설치
