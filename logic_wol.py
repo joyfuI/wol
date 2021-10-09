@@ -24,8 +24,8 @@ class LogicWOL(LogicModuleBase):
         f'{name}_port': 7
     }
 
-    def __init__(self, P):
-        super(LogicWOL, self).__init__(P, 'wol')
+    def __init__(self, p):
+        super(LogicWOL, self).__init__(p, 'wol')
         self.name = name
 
     def process_menu(self, sub, req):
