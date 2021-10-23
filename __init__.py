@@ -4,5 +4,5 @@ mod_info = {
     'mod_class': LogicWOL,
     'sub': ['wol', 'WOL'],
     'sub2': [['setting', '설정'], ['wol', 'WOL']],
-    'version': '0.1.0'
+    'version': '0.1.1'
 }

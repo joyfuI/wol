@@ -67,10 +67,10 @@ class LogicWOL(LogicModuleBase):
                 else:
                     ModelWOL.create(wol_name, mac, ip)
 
-            if sub == 'read':
+            elif sub == 'read':
                 ret['data'] = ModelWOL.to_dict()
 
-            if sub == 'delete':
+            elif sub == 'delete':
                 wol_id = req.form['id']
                 if not wol_id:
                     ret['ret'] = 'warning'
@@ -79,7 +79,7 @@ class LogicWOL(LogicModuleBase):
                     wol = ModelWOL.find(wol_id)
                     wol.delete()
 
-            if sub == 'wake':
+            elif sub == 'wake':
                 wol_id = req.form['id']
                 if not wol_id:
                     ret['ret'] = 'warning'
